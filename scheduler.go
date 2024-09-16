@@ -359,11 +359,15 @@ func (s *scheduler) selectExecJobsOutForRescheduling(id uuid.UUID) {
 			next = j.next(next)
 		}
 	}
+
+	// Clean up any existing timer to prevent leaks
+	if j.timer != nil {
+		j.timer.Stop()
+		j.timer = nil // Ensure timer is cleared for GC
+	}
+
 	j.nextScheduled = append(j.nextScheduled, next)
 	j.timer = s.exec.clock.AfterFunc(next.Sub(s.now()), func() {
-		// set the actual timer on the job here and listen for
-		// shut down events so that the job doesn't attempt to
-		// run if the scheduler has been shutdown.
 		select {
 		case <-s.shutdownCtx.Done():
 			return
