@@ -368,6 +368,9 @@ func (s *scheduler) selectExecJobsOutForRescheduling(id uuid.UUID) {
 
 	j.nextScheduled = append(j.nextScheduled, next)
 	j.timer = s.exec.clock.AfterFunc(next.Sub(s.now()), func() {
+		// set the actual timer on the job here and listen for
+		// shut down events so that the job doesn't attempt to
+		// run if the scheduler has been shutdown.
 		select {
 		case <-s.shutdownCtx.Done():
 			return
